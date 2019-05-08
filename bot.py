@@ -72,7 +72,7 @@ class Bot:
         if current < average:
             return(1 - (current / average))
         return (0)
-#jaime la saucisse
+
     def compute_money(self, candles):
         sma = self.sma(candles)
         stand_dev = self.standardDeviation(candles)
@@ -100,7 +100,7 @@ class Bot:
             return (self.compute_money(candles))
 
     #NOTE for x in candles[::-1]:
-        #   print item
+    #   print item
 
     def rsi_inc(self, candles):
         res = 0
