@@ -142,32 +142,47 @@ class Bot:
     def action(self, candles):
         node = self.node_strat(candles)
         rsi = self.rsi_strat(candles)
-        print("NODE I : " + str(node))
-        print("RSI  I : " + str(rsi))
+        # print("NODE I : " + str(node))
+        # print("RSI  I : " + str(rsi))
         result = ""
-        if (node == 1 and rsi == 1):
-            result += "buy " + candles[0].getPair() + " "
-            if (candles[0].getName() == "BTC_ETH"):
-                toBuy = float (settings["btc"]) / candles[-1].getClose()
-            else:
-                toBuy = float(settings["usdt"] / candles[-1].getClose())
-            result += str(toBuy) + ";"
-        elif (node != 0 and rsi != 0):
-            result += "sell " + candles[0].getPair() + " "
-            if (candles[0].getName() == "USDT_BTC"):
-                toSell = float (settings["btc"] / candles[-1].getClose())
-            else:
-                toSell = float (settings["eth"] / candles[-1].getClose())
-            result += str(toSell) + ";"
+        toSell = 0
+        toBuy = 0
+
+        pair = candles[-1].getPair().split("_")
+        acc1 = float(settings[pair[0]])
+        acc2 = float(settings[pair[1]])
+
+        if (node == 1):
+            if (acc1 != 0):
+                toBuy = acc1 / candles[-1].getClose()
+        elif (node == -1):
+            if (acc2 != 0):
+                toSell = acc2
+        if (toBuy != 0):
+            result += "buy " + candles[-1].getPair() + " " + str(toBuy) + ";"
+            newAcc1 = acc1 - (toBuy * candles[-1].getClose())
+            settings.update({pair[0] : str(newAcc1)})
+            settings.update({pair[1] : str(acc2 + toBuy)})
+        if (toSell != 0):
+            result += "sell " + candles[-1].getPair() + " " + str(toSell) + ";"
+            newAcc1 = acc1 + toSell * candles[-1].getClose()
+            settings.update({pair[0] : str(newAcc1)})
+            settings.update({pair[1] : str(acc2 - toSell)})
         return result
 
     def sendAction(self):
+        # print ("\nBEFORE\nUSDT : " + str(float(settings["USDT"])))
+        # print ("BTC : " + str(float(settings["BTC"])))
+        # print ("ETH : " + str(float(settings["ETH"])))
         usdt_btc = self.action(self.usdt_btc_candles)
         usdt_eth = self.action(self.usdt_eth_candles)
         btc_eth = self.action(self.btc_eth_candles)
         if (usdt_btc == "" and usdt_eth == "" and btc_eth == ""):
             print("pass")
         else:
+            # print ("\nAFTER\nUSDT : " + str(float(settings["USDT"])))
+            # print ("BTC : " + str(float(settings["BTC"])))
+            # print ("ETH : " + str(float(settings["ETH"])))
             print(usdt_btc + usdt_eth + btc_eth)
 
     def update(self, command):
