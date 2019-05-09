@@ -1,6 +1,3 @@
-def setValue(*args, command):
-    args = int(command)
-
 settings =	{
   "timebank": 0,
   "timer_per_move": 0,

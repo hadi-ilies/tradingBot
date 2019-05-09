@@ -1,9 +1,11 @@
 import math
-from dictionary import *
+from node_strat import node_strat
+from rsi_strat import rsi_strat
+from dictionary import settings
 from Candle import Candle
 import statistics
 
-nb_candle_g = 20
+nb_candle_g = 30
 std_mult = 2
 
 class Bot:
@@ -35,7 +37,6 @@ class Bot:
                 if (len(self.usdt_eth_candles) > nb_candle_g + 1):
                     self.usdt_eth_candles.pop(0)
 
-    #TODO maybe we should remove this function.
     def stacks(self, command):
         # BTC:0.00379240,ETH:0.00000000,USDT:957.90
         stacks = command.split(",")
@@ -43,107 +44,15 @@ class Bot:
             money = stack.split(":")
             settings.update({money[0] : money[1]})
 
-    #TODO maybe the site can send not enough candles so it may result in error
-    def sma(self, candles):
-        res = 0
-        for x in candles:
-            res += x.getClose()
-        res -= candles[-1].getClose()
-        return (res / nb_candle_g)
-
-    ##NOTE standartDeviation == l'écart type
-    def standardDeviation(self, candles):
-        deviation = 0.0
-        average = self.sma(candles)
-        for x in candles:
-            deviation += pow(x.getClose() - average, 2)
-        deviation -= pow(candles[-1].getClose() - average, 2)
-        return math.sqrt(deviation / nb_candle_g)
-
-    def compute_node(self, candles):
-        average = 0
-        for x in candles:
-            average += math.fabs(x.getClose() - x.getOpen())
-        average -= math.fabs(candles[-1].getClose() - candles[-1].getOpen())
-        average /= nb_candle_g
-        current = math.fabs(candles[-1].getClose() - candles[-1].getOpen())
-        if current > average:
-           return(1 - (average / current))
-        if current < average:
-            return(1 - (current / average))
-        return (0)
-
-    def compute_money(self, candles):
-        sma = self.sma(candles)
-        stand_dev = self.standardDeviation(candles)
-        top = sma + stand_dev * std_mult
-        bot = sma - stand_dev * std_mult
-        close = candles[-1].getClose()
-        # print ("SMA : " + str(sma))
-        # print ("Stand dev : " + str(stand_dev))
-        # print ("Top : " + str(top))
-        # print ("Bot : " + str(bot))
-        # print ("Close : " + str(close))
-        if close > top:
-            return (1)
-        elif close < bot:
-            return (-1)
-        else:
-            return (0.0)
-
-    def node_strat(self, candles):
-        node_indice = self.compute_node(candles)
-        # print ("Indice de noeud : " + str(node_indice))
-        if node_indice < 0.4:
-            return (0.0)
-        else:
-            return (self.compute_money(candles))
-
-    #NOTE for x in candles[::-1]:
-    #   print item
-
-    def rsi_inc(self, candles):
-        res = 0
-        i = 0
-        for candle in candles:
-            if candle.getOpen() < candle.getClose():
-                res += candle.getClose() - candle.getOpen()
-                i = i + 1
-        if i == 0:
-            return i
-        return res / i
-
-    def rsi_dec(self, candles):
-        res = 0
-        i = 0
-        for candle in candles:
-            if candle.getOpen() > candle.getClose():
-                res += candle.getOpen() - candle.getClose()
-                i += 1
-        if i == 0:
-            return 0
-        return res / i
-
-    def compute_rsi(self, candles):
-        inc = self.rsi_inc(candles)
-        dec = self.rsi_dec(candles)
-        return 100 - (100 / (1 + (inc / dec)))
-
-    def rsi_strat(self, candles):
-        prev = self.compute_rsi(candles[0:len(candles) - 1])
-        new = self.compute_rsi(candles[1:])
-        if prev > 70 and new <= 70:
-            return (-1)
-        elif prev < 30 and new >= 30:
-            return (1)
-        else:
-            return 0
+    def update(self, command):
+        if (command[0] == "next_candles"):
+            self.next_candles(command[1])
+        elif (command[0] == "stacks"):
+            self.stacks(command[1])
 
     def action(self, candles):
-        node = self.node_strat(candles)
-        rsi = self.rsi_strat(candles)
-        # print("NODE I : " + str(node))
-        # print("RSI  I : " + str(rsi))
+        node = node_strat(candles)
+        rsi = rsi_strat(candles)
         result = ""
         toSell = 0
         toBuy = 0
@@ -152,18 +61,18 @@ class Bot:
         acc1 = float(settings[pair[0]])
         acc2 = float(settings[pair[1]])
 
-        if (node == 1):
+        if (node == 1 or rsi == 1):
             if (acc1 != 0):
                 toBuy = acc1 / candles[-1].getClose()
-        elif (node == -1):
+        elif (node == -1 or rsi == -1):
             if (acc2 != 0):
                 toSell = acc2
-        if (toBuy != 0):
+        if (toBuy > 0):
             result += "buy " + candles[-1].getPair() + " " + str(toBuy) + ";"
             newAcc1 = acc1 - (toBuy * candles[-1].getClose())
             settings.update({pair[0] : str(newAcc1)})
             settings.update({pair[1] : str(acc2 + toBuy)})
-        if (toSell != 0):
+        elif (toSell > 0):
             result += "sell " + candles[-1].getPair() + " " + str(toSell) + ";"
             newAcc1 = acc1 + toSell * candles[-1].getClose()
             settings.update({pair[0] : str(newAcc1)})
@@ -184,12 +93,6 @@ class Bot:
             # print ("BTC : " + str(float(settings["BTC"])))
             # print ("ETH : " + str(float(settings["ETH"])))
             print(usdt_btc + usdt_eth + btc_eth)
-
-    def update(self, command):
-        if (command[0] == "next_candles"):
-            self.next_candles(command[1])
-        elif (command[0] == "stacks"):
-            self.stacks(command[1])
 
     def parser(self, command):
         if (command[0] == "settings"):
