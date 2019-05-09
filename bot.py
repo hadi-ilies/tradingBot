@@ -60,6 +60,7 @@ class Bot:
         pair = candles[-1].getPair().split("_")
         acc1 = float(settings[pair[0]])
         acc2 = float(settings[pair[1]])
+        fee = float(settings["transaction_fee_percent"])
 
         if (node == 1 or rsi == 1):
             if (acc1 != 0):
