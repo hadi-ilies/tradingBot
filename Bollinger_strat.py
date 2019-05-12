@@ -1,5 +1,8 @@
 import math
+
 nb_candle_g = 30
+
+##NOTE Déviation standard = l'écart type
 
 def sma(candles):
     res = 0
@@ -7,7 +10,6 @@ def sma(candles):
         res += x.getClose()
     return (res / nb_candle_g)
 
-##NOTE standartDeviation == l'écart type
 def standardDeviation(candles):
     deviation = 0.0
     average = sma(candles)
@@ -15,7 +17,7 @@ def standardDeviation(candles):
         deviation += pow(x.getClose() - average, 2)
     return math.sqrt(deviation / nb_candle_g)
 
-def node_strat(candles):
+def bollinger_strat(candles):
     x = sma(candles[1:])
     std_dev = standardDeviation(candles[1:])
     A1 = x + std_dev * 2

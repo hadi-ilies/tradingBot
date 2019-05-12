@@ -1,11 +1,9 @@
-import math
-from node_strat import node_strat
-from rsi_strat import rsi_strat
+from Bollinger_strat import bollinger_strat
+from Bollinger_strat import nb_candle_g
 from dictionary import settings
 from Candle import Candle
 import statistics
 
-nb_candle_g = 30
 std_mult = 2
 
 class Bot:
@@ -38,7 +36,6 @@ class Bot:
                     self.usdt_eth_candles.pop(0)
 
     def stacks(self, command):
-        # BTC:0.00379240,ETH:0.00000000,USDT:957.90
         stacks = command.split(",")
         for stack in stacks:
             money = stack.split(":")
@@ -51,10 +48,11 @@ class Bot:
             self.stacks(command[1])
 
     def action(self, candles):
-        node = node_strat(candles)
+        node = bollinger_strat(candles)
         result = ""
         toSell = 0
         toBuy = 0
+
         pair = candles[-1].getPair().split("_")
         acc1 = float(settings[pair[0]])
         acc2 = float(settings[pair[1]])
@@ -102,4 +100,3 @@ class Bot:
             string = input()
             string = string.split(" ")
             self.parser(string)
-            ##code
