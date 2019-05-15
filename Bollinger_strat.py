@@ -12,7 +12,7 @@ def sma(candles):
 
 def standardDeviation(candles):
     deviation = 0.0
-    average = sma(candles)
+    average =sma(candles)
     for x in candles:
         deviation += pow(x.getClose() - average, 2)
     return math.sqrt(deviation / nb_candle_g)
