@@ -1,8 +1,11 @@
 from Bollinger_strat import bollinger_strat
-from Bollinger_strat import nb_candle_g
 from dictionary import settings
 from Candle import Candle
 import statistics
+
+candle_memory = 30
+
+bollinger_setup = 30
 
 std_mult = 2
 
@@ -24,15 +27,15 @@ class Bot:
             candle = strCandle.split(',')
             if (candle[0] == "BTC_ETH"):
                 self.btc_eth_candles.append(Candle(candle))
-                if (len(self.btc_eth_candles) > nb_candle_g + 1):
+                if (len(self.btc_eth_candles) > candle_memory + 1):
                     self.btc_eth_candles.pop(0)
             elif (candle[0] == "USDT_BTC"):
                 self.usdt_btc_candles.append(Candle(candle))
-                if (len(self.usdt_btc_candles) > nb_candle_g + 1):
+                if (len(self.usdt_btc_candles) > candle_memory + 1):
                     self.usdt_btc_candles.pop(0)
             elif (candle[0] == "USDT_ETH"):
                 self.usdt_eth_candles.append(Candle(candle))
-                if (len(self.usdt_eth_candles) > nb_candle_g + 1):
+                if (len(self.usdt_eth_candles) > candle_memory + 1):
                     self.usdt_eth_candles.pop(0)
 
     def stacks(self, command):
@@ -48,7 +51,7 @@ class Bot:
             self.stacks(command[1])
 
     def action(self, candles):
-        node = bollinger_strat(candles)
+        node = bollinger_strat(candles, bollinger_setup)
         result = ""
         toSell = 0
         toBuy = 0
